@@ -1,0 +1,21 @@
+telegram:
+  debug: false
+  token: 22222222:11111111111111111
+  PoolAddress: 172.20.17.208
+  Poolport: 8443
+  HookUrl: https://bothome.mydomen.ru
+  HookPort: 8443
+  HookCertPub: ./certs/bothome.mydomen.ru.pem
+  HookCertKey: ./certs/bothome.mydomen.ru.key
+radius:
+  address: 172.20.17.208
+  port: 1812
+  secret: 31231fsadf34fvdsgfv34fg
+ldap:
+  servers:
+    - 10.110.154.231:389
+    - 10.110.154.232:389
+  user: service-2fa
+  password: das;fo8,34;otkml,e4rtl
+  domain: zzz.local
+  dn: dc=zzz,dc=local
