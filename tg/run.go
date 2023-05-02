@@ -43,9 +43,7 @@ func updatesWord() {
 
 	go runHttpServer()
 	for update := range updates {
-
-		bool := checkCallbackQuery(update)
-		if bool {
+		if checkCallbackQuery(update) {
 			continue
 		}
 		if update.Message == nil { // ignore any non-Message updates
@@ -95,7 +93,7 @@ func checkCallbackQuery(update tgbotapi.Update) bool {
 	return false
 }
 
-func SendQuery(user ldap.User) error {
+func SendQuery(user ldap.User, timeout int) error {
 
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -103,7 +101,8 @@ func SendQuery(user ldap.User) error {
 			tgbotapi.NewInlineKeyboardButtonData("Нет", "no"),
 		),
 	)
-	msg := tgbotapi.NewMessage(user.TelegramId, "Кто-то пытаеться авторизировать под вашей учетной записью\n это вы?")
+	str := fmt.Sprintf("Кто-то пытается авторизоваться под вашей учетной записью\nЭто вы?\n Необходимо ответить в течении %d секунд", timeout)
+	msg := tgbotapi.NewMessage(user.TelegramId, str)
 	msg.ReplyMarkup = inlineKeyboard
 	msgSend, err := bot.Send(msg)
 	if err != nil {
@@ -125,7 +124,6 @@ func removeMsg(msg *tgbotapi.Message) error {
 func RemoveMsg(chatid, msgid int64) {
 	deleteMsgConfig := tgbotapi.NewDeleteMessage(chatid, int(msgid))
 	_, _ = bot.Request(deleteMsgConfig)
-
 	return
 }
 

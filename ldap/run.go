@@ -61,7 +61,7 @@ func createConn() error {
 		return nil
 	}
 
-	return errors.New("Не смогли установить соединение с ldap серверами")
+	return errors.New("не смогли установить соединение с ldap серверами")
 }
 func schedule() {
 	c := cron.New()

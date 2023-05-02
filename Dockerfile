@@ -2,11 +2,11 @@ FROM golang:1.20.3 AS builder
 COPY . $GOPATH/src/app
 WORKDIR $GOPATH/src/app
 RUN go get -d -v
-RUN GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_CFLAGS="-g -O2 -Wno-return-local-addr" go build -o $GOPATH/src/app/app.bin
+RUN GOOS=linux GOARCH=amd64 CGO_CFLAGS="-g -O2 -Wno-return-local-addr" go build -o /app.bin
 
-FROM alpine
+FROM alpine:3.17.3
 ENV TZ Europe/Moscow
-COPY --from=builder /go/src/app/app.bin /app.bin
+COPY --from=builder /app.bin /app.bin
 EXPOSE 8443/tcp
 EXPOSE 1812/tcp
 VOLUME ["/certs","/config"]

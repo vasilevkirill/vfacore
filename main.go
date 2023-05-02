@@ -8,25 +8,23 @@ import (
 	tg "main/tg"
 )
 
-var rsecret = "los9diufmhspod9ufhmspdioufhspoidh"
-
 func main() {
-	config := LoadConfig()
+	config := LoadConfig() // поулчаем конфиг
 	queue.InitQ()
 	var LdapConfig ldap.Config
 	err := config.UnmarshalKey("ldap", &LdapConfig)
-	err = ldap.Run(LdapConfig)
+	err = ldap.Run(LdapConfig) // инициалзируем ldap
 	checkFatal(err)
 	var tgConfig tg.Config
 	err = config.UnmarshalKey("telegram", &tgConfig)
 	checkFatal(err)
-	err = tg.Run(tgConfig)
+	err = tg.Run(tgConfig) // инициалзируем бета телеграм
 	checkFatal(err)
 
 	var radiusConfig radius.Config
 	err = config.UnmarshalKey("radius", &radiusConfig)
 	checkFatal(err)
-	err = radius.Run(radiusConfig)
+	err = radius.Run(radiusConfig) // инициалзируем радиус сервер
 	checkFatal(err)
 
 }

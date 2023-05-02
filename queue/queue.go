@@ -53,6 +53,7 @@ func (q *Queue) SetMsgId(key, msgid int64) {
 
 }
 
+// инициализация очередей
 func InitQ() {
 	var q Queue
 	q.Map = make(map[int64]Msg)

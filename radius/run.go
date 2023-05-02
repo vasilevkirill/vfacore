@@ -14,8 +14,10 @@ import (
 	"time"
 )
 
-func Run(config Config) error {
+var config Config
 
+func Run(cfg Config) error {
+	config = cfg
 	server := radius.PacketServer{
 		Handler:      radius.HandlerFunc(handler),
 		SecretSource: radius.StaticSecretSource([]byte(config.Secret)),
@@ -51,7 +53,7 @@ func handler(w radius.ResponseWriter, r *radius.Request) {
 	log.Printf("Запрос на подключение от пользователя %s", user.SAMAccountName)
 	queue.Q.AddKey(user.TelegramId)
 
-	err = tg.SendQuery(user)
+	err = tg.SendQuery(user, config.Answertimeout)
 	if err != nil {
 		log.Println(err)
 		sendAccessReject(w, r)
@@ -59,7 +61,7 @@ func handler(w radius.ResponseWriter, r *radius.Request) {
 	}
 
 	ctx := context.Background()
-	ctx, cancelFunctionContext := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancelFunctionContext := context.WithTimeout(ctx, time.Duration(config.Answertimeout)*time.Second)
 	defer func() {
 		queue.Q.RemoveKey(user.TelegramId)
 		cancelFunctionContext()
@@ -108,7 +110,10 @@ func send(w radius.ResponseWriter, r *radius.Request, code radius.Code) {
 	p := r.Response(code)
 	prx := rfc2865.ProxyState_Get(r.Packet)
 	p.Add(rfc2865.ProxyState_Type, prx)
-	w.Write(p)
+	err := w.Write(p)
+	if err != nil {
+		log.Printf("Radius send error: %s", err.Error())
+	}
 }
 
 func getUserName(user string) string {
