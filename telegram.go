@@ -17,7 +17,9 @@ func telegramRun() error {
 
 	}
 	bt.Debug = configGlobalS.Telegram.Debug
-	wh, err := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", configGlobalS.Telegram.HookDomain), configGlobalS.Telegram.HookPort), tgbotapi.FilePath(configGlobalS.Telegram.HookCertPub))
+	webHookAddress := fmt.Sprintf("https://%s:%d", configGlobalS.Telegram.HookDomain, configGlobalS.Telegram.HookPort)
+	configGlobalS.Telegram.WebHookAddress = webHookAddress
+	wh, err := tgbotapi.NewWebhookWithCert(webHookAddress, tgbotapi.FilePath(configGlobalS.Telegram.HookCertPub))
 	if err != nil {
 		return errorGetFromIdAddSuffix(601, err.Error())
 	}
@@ -30,6 +32,7 @@ func telegramRun() error {
 	if err != nil {
 		return errorGetFromIdAddSuffix(603, err.Error())
 	}
+
 	if info.LastErrorDate != 0 {
 		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 	}

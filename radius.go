@@ -18,7 +18,7 @@ func radiusRun() error {
 		SecretSource: radius.StaticSecretSource([]byte(configGlobalS.Radius.Secret)),
 		Addr:         fmt.Sprintf("%s:%d", configGlobalS.Radius.Address, configGlobalS.Radius.Port),
 	}
-
+	configGlobalS.Radius.ServerAddress = server.Addr
 	log.Printf(fmt.Sprintf("Radius - Запуск сервера на %s", server.Addr))
 	if err := server.ListenAndServe(); err != nil {
 		return errorGetFromIdAddSuffix(700, err.Error(), server.Addr)

@@ -1,14 +1,16 @@
 package vfacore
 
 type tgConfig struct {
-	Debug       bool
-	Token       string
-	PoolAddress string
-	PoolPort    uint16
-	HookDomain  string
-	HookPort    uint16
-	HookCertPub string
-	HookCertKey string
+	Debug          bool
+	Token          string
+	PoolAddress    string
+	PoolPort       uint16
+	HookDomain     string
+	HookPort       uint16
+	HookCertPub    string
+	HookCertKey    string
+	NameBot        string `yaml:"-"`
+	WebHookAddress string `yaml:"-"`
 }
 
 type ldapConfig struct {
@@ -30,6 +32,7 @@ type radiusConfig struct {
 	Port          uint16
 	Secret        string
 	Answertimeout int
+	ServerAddress string `yaml:"-"`
 }
 
 type configS struct {
