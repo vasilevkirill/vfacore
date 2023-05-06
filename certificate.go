@@ -15,19 +15,22 @@ import (
 func generateCertificate() error {
 	certFileKey := "./cert.key"
 	certFileCer := "./cert.cer"
-	_, err := os.Stat(certFileKey)
 
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if err != nil && os.IsNotExist(err) {
+	if fileExist(certFileKey) {
 		err := os.Remove(certFileKey)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = os.Stat(certFileCer)
+	if fileExist(certFileCer) {
+		err := os.Remove(certFileCer)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := os.Stat(certFileCer)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
