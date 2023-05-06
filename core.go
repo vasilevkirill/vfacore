@@ -1,10 +1,10 @@
-package _fa
+package vfacore
 
 import (
-	ldap2 "core/ldap"
-	"core/queue"
-	radius2 "core/radius"
-	tg2 "core/tg"
+	ldap2 "vfacore/ldap"
+	"vfacore/queue"
+	radius2 "vfacore/radius"
+	tg2 "vfacore/tg"
 )
 
 func Run() error {

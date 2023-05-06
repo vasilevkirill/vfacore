@@ -1,13 +1,13 @@
-package _fa
+package vfacore
 
 import (
-	"core/certificate"
-	"core/errc"
-	"core/ldap"
-	"core/tg"
 	"fmt"
 	"github.com/spf13/viper"
 	"log"
+	"vfacore/certificate"
+	"vfacore/errc"
+	"vfacore/ldap"
+	"vfacore/tg"
 )
 
 func loadConfig() *viper.Viper {
