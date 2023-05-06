@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"main/ldap"
-	"main/queue"
+	"main/2fa/ldap"
+	"main/2fa/queue"
 	"net/http"
 )
 
@@ -14,13 +14,14 @@ var config *Config
 
 func Run(c Config) error {
 	config = &c
+
 	bt, err := tgbotapi.NewBotAPI(config.Token)
 	if err != nil {
 		return err
 	}
 	bt.Debug = config.Debug
 	log.Printf("Авторизировались на аккаунте %s", bt.Self.UserName)
-	wh, _ := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", config.HookUrl, config.HookPort), tgbotapi.FilePath(config.HookCertPub))
+	wh, _ := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", config.HookDomain), config.HookPort), tgbotapi.FilePath(config.HookCertPub))
 	_, err = bt.Request(wh)
 	if err != nil {
 		return err

@@ -3,7 +3,6 @@ package ldap
 type Config struct {
 	User     string
 	Password string
-	Domain   string
 	Servers  []string
 	Dn       string
 }

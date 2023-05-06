@@ -5,7 +5,7 @@ type Config struct {
 	Token       string
 	PoolAddress string
 	PoolPort    uint16
-	HookUrl     string
+	HookDomain  string
 	HookPort    uint16
 	HookCertPub string
 	HookCertKey string

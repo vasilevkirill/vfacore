@@ -7,9 +7,9 @@ import (
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"
 	"log"
-	"main/ldap"
-	"main/queue"
-	"main/tg"
+	"main/2fa/ldap"
+	"main/2fa/queue"
+	"main/2fa/tg"
 	"strings"
 	"time"
 )

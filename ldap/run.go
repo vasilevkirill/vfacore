@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	ldapv3 "github.com/go-ldap/ldap/v3"
-	"github.com/robfig/cron/v3"
 	"log"
 )
 
