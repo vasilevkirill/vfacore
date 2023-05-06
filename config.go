@@ -71,7 +71,7 @@ func checkConfigTelegram() error {
 	}
 	if configGlobalS.Telegram.HookCertPub == "" || configGlobalS.Telegram.HookCertKey == "" {
 		log.Println("telegram.HookCertPub or telegram.HookCertKey config is empty, user self-sign")
-		err := generateCertificate(configGlobalS.Telegram.HookDomain)
+		err := generateCertificate()
 		if err != nil {
 			return errorGetFromIdAddSuffix(500, err.Error())
 		}
