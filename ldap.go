@@ -38,32 +38,32 @@ func ping() {
 
 func createConn() error {
 	for _, ldapServer := range configGlobalS.Ldap.Servers {
-		log.Printf("Попытка установить соединение с сервером ldap: %s", ldapServer)
+		log.Printf("Ldap - Попытка установить соединение с сервером ldap: %s", ldapServer)
 		ldapL, err := ldapv3.Dial("tcp", ldapServer)
 		if err != nil {
-			log.Printf("Ошибка при подключении к серверу ldap: %s", ldapServer)
+			log.Printf("Ldap - Ошибка при подключении к серверу ldap: %s", ldapServer)
 			log.Println(err)
 			continue
 		}
 		err = ldapL.StartTLS(&tls.Config{InsecureSkipVerify: true})
 		if err != nil {
-			log.Printf("Ошибка при установки TLS соединения с сервером ldap: %s", ldapServer)
+			log.Printf("Ldap - Ошибка при установки TLS соединения с сервером ldap: %s", ldapServer)
 			log.Println(err)
 			continue
 		}
 		err = ldapL.Bind(configGlobalS.Ldap.User, configGlobalS.Ldap.Password)
 		if err != nil {
-			log.Printf("Ошибка при авторизиции (bind) на сервере ldap: %s", ldapServer)
+			log.Printf("Ldap - Ошибка при авторизиции (bind) на сервере ldap: %s", ldapServer)
 			log.Println(err)
 			continue
 		}
-		log.Printf("Установленно соединение с сервером ldap: %s", ldapServer)
+		log.Printf("Ldap - Установленно соединение с сервером ldap: %s", ldapServer)
 		conn = ldapL
 		schedule()
 		return nil
 	}
 
-	return errors.New("не смогли установить соединение с ldap серверами")
+	return errorGetFromId(801)
 }
 func schedule() {
 	c := cron.New()
@@ -85,7 +85,8 @@ func searchFilterAttrs(filter string, attr []string) ([]*ldapv3.Entry, error) {
 	)
 	req, err := conn.Search(searchRequest)
 	if err != nil {
-		return []*ldapv3.Entry{}, err
+		errN := errorGetFromIdAddSuffix(802, err.Error())
+		return []*ldapv3.Entry{}, errN
 	}
 	return req.Entries, nil
 }
@@ -131,7 +132,8 @@ func (u *ldapUser) PullViaSAMAccountName() error {
 	pager := req[0].GetAttributeValue("pager")
 	TelegramId, err := strconv.ParseInt(pager, 10, 64)
 	if err != nil {
-		return err
+		errN := errorGetFromIdAddSuffix(803, err.Error())
+		return errN
 	}
 	u.TelegramId = TelegramId
 	return nil

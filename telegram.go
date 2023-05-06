@@ -13,18 +13,22 @@ func telegramRun() error {
 
 	bt, err := tgbotapi.NewBotAPI(configGlobalS.Telegram.Token)
 	if err != nil {
-		return err
+		return errorGetFromIdAddSuffix(600, err.Error())
+
 	}
 	bt.Debug = configGlobalS.Telegram.Debug
-	log.Printf("Авторизировались на аккаунте %s", bt.Self.UserName)
-	wh, _ := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", configGlobalS.Telegram.HookDomain), configGlobalS.Telegram.HookPort), tgbotapi.FilePath(configGlobalS.Telegram.HookCertPub))
+	wh, err := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", configGlobalS.Telegram.HookDomain), configGlobalS.Telegram.HookPort), tgbotapi.FilePath(configGlobalS.Telegram.HookCertPub))
+	if err != nil {
+		return errorGetFromIdAddSuffix(601, err.Error())
+	}
 	_, err = bt.Request(wh)
 	if err != nil {
-		return err
+		return errorGetFromIdAddSuffix(602, err.Error())
+
 	}
 	info, err := bt.GetWebhookInfo()
 	if err != nil {
-		return err
+		return errorGetFromIdAddSuffix(603, err.Error())
 	}
 	if info.LastErrorDate != 0 {
 		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
@@ -113,7 +117,8 @@ func removeMsg(msg *tgbotapi.Message) error {
 	deleteMsgConfig := tgbotapi.NewDeleteMessage(msg.Chat.ID, msg.MessageID)
 	_, err := bot.Request(deleteMsgConfig)
 	if err != nil {
-		return err
+
+		return errorGetFromIdAddSuffix(604, err.Error())
 	}
 	return nil
 }
@@ -124,9 +129,11 @@ func removeMsgByChaiIDMsgIDForce(chatid, msgid int64) {
 }
 
 func runHttpServer() {
-	err := http.ListenAndServeTLS(fmt.Sprintf("%s:%d", configGlobalS.Telegram.PoolAddress, configGlobalS.Telegram.PoolPort), configGlobalS.Telegram.HookCertPub, configGlobalS.Telegram.HookCertKey, nil)
+	strConnect := fmt.Sprintf("%s:%d", configGlobalS.Telegram.PoolAddress, configGlobalS.Telegram.PoolPort)
+	err := http.ListenAndServeTLS(strConnect, configGlobalS.Telegram.HookCertPub, configGlobalS.Telegram.HookCertKey, nil)
 	if err != nil {
-		log.Panic(err)
+		errN := errorGetFromIdAddSuffix(605, err.Error(), strConnect)
+		log.Panic(errN)
 	}
 }
 
@@ -138,7 +145,7 @@ func debug(str string) {
 
 func cmdStart(update tgbotapi.Update) {
 
-	debug("Получена команда /start")
+	debug("Система получила команду /start")
 
 	msgWait := tgbotapi.NewMessage(update.Message.Chat.ID, "Ждите...")
 	msgW, err := bot.Send(msgWait)
@@ -150,11 +157,11 @@ func cmdStart(update tgbotapi.Update) {
 	if err != nil {
 		switch err {
 		case ldapErrUserNotFound:
-			msg.Text = fmt.Sprintf("Привет, мы не знакомы\n отправь с службу поддержки #100 твой ID %d ", user.TelegramId)
+			msg.Text = fmt.Sprintf("Привет, мы не знакомы\n отправь с службу поддержки твой ID %d ", user.TelegramId)
 		case ldapErrUserFoundMoreThanOne:
-			msg.Text = fmt.Sprintf("Произошла ошибка 100, свяжись с технической поддержкой\nid:%d", user.TelegramId)
+			msg.Text = fmt.Sprintf("Сообщение об ошибке с кодом 100, пожалуйста, обратитесь в службу технической поддержки.\nid:%d", user.TelegramId)
 		default:
-			msg.Text = fmt.Sprintf("Произошла ошибка 999, свяжись с технической поддержкой\nid:%d", user.TelegramId)
+			msg.Text = fmt.Sprintf("Сообщение об ошибке с кодом 999, пожалуйста, обратитесь в службу технической поддержки.\nid:%d", user.TelegramId)
 		}
 		err = removeMsg(&msgW)
 		if err != nil {
@@ -172,7 +179,7 @@ func cmdStart(update tgbotapi.Update) {
 	if err != nil {
 		log.Println(err)
 	}
-	msg.Text = "Привет всё готово, мы уже знакомы"
+	msg.Text = "Здравствуйте, всё подготовлено, мы уже знакомы."
 	_, err = bot.Send(msg)
 	if err != nil {
 		log.Println(err)
