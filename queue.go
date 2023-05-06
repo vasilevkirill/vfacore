@@ -58,5 +58,4 @@ func initQ() {
 	var q queue
 	q.Map = make(map[int64]queueMsg)
 	qu = q
-
 }

@@ -62,7 +62,7 @@ func generateCertificate() error {
 	if err != nil {
 		return err
 	}
-	defer certFile.Close()
+	defer closeFileForce(certFile)
 	if err := pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes}); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func generateCertificate() error {
 	if err != nil {
 		return err
 	}
-	defer keyFile.Close()
+	defer closeFileForce(keyFile)
 	if err := pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}); err != nil {
 		return err
 	}
