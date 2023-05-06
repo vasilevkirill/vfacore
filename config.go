@@ -1,16 +1,16 @@
 package vfacore
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
-	"vfacore/certificate"
-	"vfacore/errc"
-	"vfacore/ldap"
-	"vfacore/tg"
 )
 
-func loadConfig() *viper.Viper {
+var (
+	configGlobalS configS
+	configViper   = viper.New()
+)
+
+func loadConfig() error {
 	Config := viper.New()
 	Config.AddConfigPath("./config")
 	Config.SetConfigName("config")
@@ -18,48 +18,62 @@ func loadConfig() *viper.Viper {
 
 	err := Config.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("fatal error config file: %s", err.Error()))
+		return err
+		//panic(fmt.Errorf("fatal error config file: %s", err.Error()))
 	}
-	return Config
+	var configSv configS
+	err = Config.Unmarshal(&configSv)
+	if err != nil {
+		return err
+	}
+	configGlobalS = configSv
+	configViper = Config
+	if err = checkConfigLdap(); err != nil {
+		return err
+	}
+	if err = checkConfigTelegram(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func checkConfigLdap(config *ldap.Config) error {
+func checkConfigLdap() error {
 
-	if config.Dn == "" {
-		return errc.GetError(400)
+	if configGlobalS.Ldap.Dn == "" {
+		return errorGetFromId(400)
 	}
-	if config.User == "" {
-		return errc.GetError(401)
+	if configGlobalS.Ldap.User == "" {
+		return errorGetFromId(401)
 	}
-	if config.Password == "" {
-		return errc.GetError(402)
+	if configGlobalS.Ldap.Password == "" {
+		return errorGetFromId(402)
 	}
 
 	return nil
 }
 
-func checkConfigTelegram(config *tg.Config) error {
-	if config.Token == "" {
-		return errc.GetError(303)
+func checkConfigTelegram() error {
+	if configGlobalS.Telegram.Token == "" {
+		return errorGetFromId(303)
 	}
-	if config.HookPort == 0 {
-		return errc.GetError(304)
+	if configGlobalS.Telegram.HookPort == 0 {
+		return errorGetFromId(304)
 	}
-	if config.HookPort > 65535 && config.HookPort < 1 {
-		return errc.GetError(305)
+	if configGlobalS.Telegram.HookPort > 65535 && configGlobalS.Telegram.HookPort < 1 {
+		return errorGetFromId(305)
 	}
-	if config.HookDomain == "" {
-		return errc.GetError(306)
+	if configGlobalS.Telegram.HookDomain == "" {
+		return errorGetFromId(306)
 	}
-	if config.PoolAddress == "" {
+	if configGlobalS.Telegram.PoolAddress == "" {
 		log.Println("telegram.PoolAddress config is empty, set default 0.0.0.0")
-		config.PoolAddress = "0.0.0.0"
+		configGlobalS.Telegram.PoolAddress = "0.0.0.0"
 	}
-	if config.HookCertPub == "" || config.HookCertKey == "" {
+	if configGlobalS.Telegram.HookCertPub == "" || configGlobalS.Telegram.HookCertKey == "" {
 		log.Println("telegram.HookCertPub or telegram.HookCertKey config is empty, user self-sign")
-		err := certificate.GenerateCertificate(config.HookDomain)
+		err := generateCertificate(configGlobalS.Telegram.HookDomain)
 		if err != nil {
-			return errc.ErrorAddSuffix(500, err.Error())
+			return errorGetFromIdAddSuffix(500, err.Error())
 		}
 	}
 	return nil

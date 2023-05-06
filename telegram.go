@@ -1,27 +1,23 @@
-package tg
+package vfacore
 
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"main/2fa/ldap"
-	"main/2fa/queue"
 	"net/http"
 )
 
 var bot *tgbotapi.BotAPI
-var config *Config
 
-func Run(c Config) error {
-	config = &c
+func telegramRun() error {
 
-	bt, err := tgbotapi.NewBotAPI(config.Token)
+	bt, err := tgbotapi.NewBotAPI(configGlobalS.Telegram.Token)
 	if err != nil {
 		return err
 	}
-	bt.Debug = config.Debug
+	bt.Debug = configGlobalS.Telegram.Debug
 	log.Printf("Авторизировались на аккаунте %s", bt.Self.UserName)
-	wh, _ := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", config.HookDomain), config.HookPort), tgbotapi.FilePath(config.HookCertPub))
+	wh, _ := tgbotapi.NewWebhookWithCert(fmt.Sprintf("%s:%d", fmt.Sprintf("https://%s", configGlobalS.Telegram.HookDomain), configGlobalS.Telegram.HookPort), tgbotapi.FilePath(configGlobalS.Telegram.HookCertPub))
 	_, err = bt.Request(wh)
 	if err != nil {
 		return err
@@ -81,7 +77,7 @@ func checkCallbackQuery(update tgbotapi.Update) bool {
 		log.Println(err)
 		return true
 	}
-	m := queue.Q.GetMsg(msg.Chat.ID)
+	m := qu.GetMsg(msg.Chat.ID)
 	if data == "yes" {
 		m.Chan <- 1
 		return true
@@ -94,7 +90,7 @@ func checkCallbackQuery(update tgbotapi.Update) bool {
 	return false
 }
 
-func SendQuery(user ldap.User, timeout int) error {
+func sendQuery(user ldapUser, timeout int) error {
 
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -109,7 +105,7 @@ func SendQuery(user ldap.User, timeout int) error {
 	if err != nil {
 		return err
 	}
-	queue.Q.SetMsgId(msgSend.Chat.ID, int64(msgSend.MessageID))
+	qu.SetMsgId(msgSend.Chat.ID, int64(msgSend.MessageID))
 	return nil
 }
 
@@ -121,22 +117,66 @@ func removeMsg(msg *tgbotapi.Message) error {
 	}
 	return nil
 }
-
-func RemoveMsg(chatid, msgid int64) {
+func removeMsgByChaiIDMsgIDForce(chatid, msgid int64) {
 	deleteMsgConfig := tgbotapi.NewDeleteMessage(chatid, int(msgid))
 	_, _ = bot.Request(deleteMsgConfig)
 	return
 }
 
 func runHttpServer() {
-	err := http.ListenAndServeTLS(fmt.Sprintf("%s:%d", config.PoolAddress, config.PoolPort), config.HookCertPub, config.HookCertKey, nil)
+	err := http.ListenAndServeTLS(fmt.Sprintf("%s:%d", configGlobalS.Telegram.PoolAddress, configGlobalS.Telegram.PoolPort), configGlobalS.Telegram.HookCertPub, configGlobalS.Telegram.HookCertKey, nil)
 	if err != nil {
 		log.Panic(err)
 	}
 }
 
 func debug(str string) {
-	if config.Debug {
+	if configGlobalS.Telegram.Debug {
 		log.Println(str)
 	}
+}
+
+func cmdStart(update tgbotapi.Update) {
+
+	debug("Получена команда /start")
+
+	msgWait := tgbotapi.NewMessage(update.Message.Chat.ID, "Ждите...")
+	msgW, err := bot.Send(msgWait)
+
+	user := ldapUser{}
+	user.TelegramId = update.Message.From.ID
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+	err = user.PullViaTelegramId()
+	if err != nil {
+		switch err {
+		case ldapErrUserNotFound:
+			msg.Text = fmt.Sprintf("Привет, мы не знакомы\n отправь с службу поддержки #100 твой ID %d ", user.TelegramId)
+		case ldapErrUserFoundMoreThanOne:
+			msg.Text = fmt.Sprintf("Произошла ошибка 100, свяжись с технической поддержкой\nid:%d", user.TelegramId)
+		default:
+			msg.Text = fmt.Sprintf("Произошла ошибка 999, свяжись с технической поддержкой\nid:%d", user.TelegramId)
+		}
+		err = removeMsg(&msgW)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		return
+	}
+	err = removeMsg(&msgW)
+	if err != nil {
+		log.Println(err)
+	}
+	msg.Text = "Привет всё готово, мы уже знакомы"
+	_, err = bot.Send(msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 }

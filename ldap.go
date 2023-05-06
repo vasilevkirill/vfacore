@@ -1,19 +1,22 @@
-package ldap
+package vfacore
 
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	ldapv3 "github.com/go-ldap/ldap/v3"
+	"github.com/robfig/cron/v3"
 	"log"
+	"strconv"
 )
 
 var (
-	conn   *ldapv3.Conn
-	config Config
+	conn *ldapv3.Conn
 )
 
-func Run(cfg Config) error {
-	config = cfg
+var ()
+
+func ldapRun() error {
 	err := createConn()
 	if err != nil {
 		return err
@@ -34,7 +37,7 @@ func ping() {
 }
 
 func createConn() error {
-	for _, ldapServer := range config.Servers {
+	for _, ldapServer := range configGlobalS.Ldap.Servers {
 		log.Printf("Попытка установить соединение с сервером ldap: %s", ldapServer)
 		ldapL, err := ldapv3.Dial("tcp", ldapServer)
 		if err != nil {
@@ -48,7 +51,7 @@ func createConn() error {
 			log.Println(err)
 			continue
 		}
-		err = ldapL.Bind(config.User, config.Password)
+		err = ldapL.Bind(configGlobalS.Ldap.User, configGlobalS.Ldap.Password)
 		if err != nil {
 			log.Printf("Ошибка при авторизиции (bind) на сервере ldap: %s", ldapServer)
 			log.Println(err)
@@ -70,7 +73,7 @@ func schedule() {
 
 func searchFilterAttrs(filter string, attr []string) ([]*ldapv3.Entry, error) {
 	searchRequest := ldapv3.NewSearchRequest(
-		config.Dn,
+		configGlobalS.Ldap.Dn,
 		ldapv3.ScopeWholeSubtree,
 		ldapv3.NeverDerefAliases,
 		0,
@@ -85,4 +88,51 @@ func searchFilterAttrs(filter string, attr []string) ([]*ldapv3.Entry, error) {
 		return []*ldapv3.Entry{}, err
 	}
 	return req.Entries, nil
+}
+
+func (u *ldapUser) PullViaTelegramId() error {
+	if u.TelegramId == 0 {
+		return errors.New("telegramid не указан")
+	}
+	filer := fmt.Sprintf("(&(objectClass=organizationalPerson)(objectClass=user)(pager=%d))", u.TelegramId)
+	attrs := []string{"pager", "displayName", "sAMAccountName"}
+	req, err := searchFilterAttrs(filer, attrs)
+	if err != nil {
+		return err
+	}
+	if len(req) == 0 {
+		return ldapErrUserNotFound
+	}
+	if len(req) > 1 {
+		return ldapErrUserFoundMoreThanOne
+	}
+	u.DispalyName = req[0].GetAttributeValue("displayName")
+	u.SAMAccountName = req[0].GetAttributeValue("sAMAccountName")
+	return nil
+}
+
+func (u *ldapUser) PullViaSAMAccountName() error {
+	if u.SAMAccountName == "" {
+		return ldapErrUserSAMAccountRequired
+	}
+	filer := fmt.Sprintf("(&(objectClass=organizationalPerson)(objectClass=user)(sAMAccountName=%s))", u.SAMAccountName)
+	attrs := []string{"pager", "displayName", "sAMAccountName"}
+	req, err := searchFilterAttrs(filer, attrs)
+	if err != nil {
+		return err
+	}
+	if len(req) == 0 {
+		return ldapErrUserNotFound
+	}
+	if len(req) > 1 {
+		return ldapErrUserFoundMoreThanOne
+	}
+	u.DispalyName = req[0].GetAttributeValue("displayName")
+	pager := req[0].GetAttributeValue("pager")
+	TelegramId, err := strconv.ParseInt(pager, 10, 64)
+	if err != nil {
+		return err
+	}
+	u.TelegramId = TelegramId
+	return nil
 }

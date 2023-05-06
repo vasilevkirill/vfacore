@@ -1,4 +1,4 @@
-package errc
+package vfacore
 
 import (
 	"errors"
@@ -19,9 +19,12 @@ var (
 		402: "parameter in ldap.password config is empty",
 		500: "Generate Certificate:",
 	}
+	ldapErrUserNotFound           = errors.New("Пользователь не найден")
+	ldapErrUserFoundMoreThanOne   = errors.New("Найденно пользователей больше чем один")
+	ldapErrUserSAMAccountRequired = errors.New("SAMAccount обезателен")
 )
 
-func GetError(i int) error {
+func errorGetFromId(i int) error {
 	e, ok := errorMap[i]
 	if !ok {
 		return errors.New("unknown error")
@@ -30,9 +33,9 @@ func GetError(i int) error {
 	return errors.New(er)
 }
 
-func ErrorAddSuffix(i int, suffix string) error {
+func errorGetFromIdAddSuffix(i int, suffix string) error {
 
-	err := GetError(i)
+	err := errorGetFromId(i)
 	errNew := fmt.Sprintf("%s %s", err.Error(), suffix)
 	return errors.New(errNew)
 }

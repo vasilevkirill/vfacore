@@ -1,53 +1,24 @@
 package vfacore
 
-import (
-	ldap2 "vfacore/ldap"
-	"vfacore/queue"
-	radius2 "vfacore/radius"
-	tg2 "vfacore/tg"
-)
-
 func Run() error {
-	config := loadConfig() // поулчаем конфиг
-	var LdapConfig ldap2.Config
-	err := config.UnmarshalKey("ldap", &LdapConfig)
-	if err != nil {
-		return err
-	}
-	err = checkConfigLdap(&LdapConfig)
+	err := loadConfig() // поулчаем конфиг
 	if err != nil {
 		return err
 	}
 
-	var tgConfig tg2.Config
-	err = config.UnmarshalKey("telegram", &tgConfig)
-	if err != nil {
-		return err
-	}
-	err = checkConfigTelegram(&tgConfig)
-	if err != nil {
-		return err
-	}
+	InitQ()
 
-	var radiusConfig radius2.Config
-	err = config.UnmarshalKey("radius", &radiusConfig)
+	err = ldapRun() // инициалзируем ldap
 	if err != nil {
 		return err
 	}
 
-	queue.InitQ()
-
-	err = ldap2.Run(LdapConfig) // инициалзируем ldap
+	err = telegramRun() // инициалзируем бета телеграм
 	if err != nil {
 		return err
 	}
 
-	err = tg2.Run(tgConfig) // инициалзируем бета телеграм
-	if err != nil {
-		return err
-	}
-
-	err = radius2.Run(radiusConfig) // инициалзируем радиус сервер
+	err = radiusRun() // инициалзируем радиус сервер
 	if err != nil {
 		return err
 	}

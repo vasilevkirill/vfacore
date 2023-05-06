@@ -1,4 +1,4 @@
-package radius
+package vfacore
 
 import (
 	"context"
@@ -7,21 +7,16 @@ import (
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"
 	"log"
-	"main/2fa/ldap"
-	"main/2fa/queue"
-	"main/2fa/tg"
 	"strings"
 	"time"
 )
 
-var config Config
+func radiusRun() error {
 
-func Run(cfg Config) error {
-	config = cfg
 	server := radius.PacketServer{
 		Handler:      radius.HandlerFunc(handler),
-		SecretSource: radius.StaticSecretSource([]byte(config.Secret)),
-		Addr:         fmt.Sprintf("%s:%d", config.Address, config.Port),
+		SecretSource: radius.StaticSecretSource([]byte(configGlobalS.Radius.Secret)),
+		Addr:         fmt.Sprintf("%s:%d", configGlobalS.Radius.Address, configGlobalS.Radius.Port),
 	}
 
 	log.Printf(fmt.Sprintf("Запуск сервера на %s", server.Addr))
@@ -46,14 +41,14 @@ func handler(w radius.ResponseWriter, r *radius.Request) {
 		sendAccessReject(w, r)
 		return
 	}
-	if queue.Q.IssetKey(user.TelegramId) {
+	if qu.IssetKey(user.TelegramId) {
 		log.Printf("Запрос пользователю %s уже отправлен", user.SAMAccountName)
 		return
 	}
 	log.Printf("Запрос на подключение от пользователя %s", user.SAMAccountName)
-	queue.Q.AddKey(user.TelegramId)
+	qu.AddKey(user.TelegramId)
 
-	err = tg.SendQuery(user, config.Answertimeout)
+	err = sendQuery(user, configGlobalS.Radius.Answertimeout)
 	if err != nil {
 		log.Println(err)
 		sendAccessReject(w, r)
@@ -61,27 +56,27 @@ func handler(w radius.ResponseWriter, r *radius.Request) {
 	}
 
 	ctx := context.Background()
-	ctx, cancelFunctionContext := context.WithTimeout(ctx, time.Duration(config.Answertimeout)*time.Second)
+	ctx, cancelFunctionContext := context.WithTimeout(ctx, time.Duration(configGlobalS.Radius.Answertimeout)*time.Second)
 	defer func() {
-		queue.Q.RemoveKey(user.TelegramId)
+		qu.RemoveKey(user.TelegramId)
 		cancelFunctionContext()
 		sendAccessReject(w, r)
 		return
 	}()
-	msg := queue.Q.GetMsg(user.TelegramId)
+	msg := qu.GetMsg(user.TelegramId)
 	err = waitAnswer(ctx, msg, user)
 	if err != nil {
-		queue.Q.RemoveKey(user.TelegramId)
+		qu.RemoveKey(user.TelegramId)
 		log.Println(err)
 		sendAccessReject(w, r)
-		tg.RemoveMsg(user.TelegramId, msg.MsgId)
+		removeMsgByChaiIDMsgIDForce(user.TelegramId, msg.MsgId)
 		return
 	}
-	queue.Q.RemoveKey(user.TelegramId)
+	qu.RemoveKey(user.TelegramId)
 	log.Printf("Пользователь %s aвторизирован", user.SAMAccountName)
 	sendAccessAccept(w, r)
 }
-func waitAnswer(ctx context.Context, msg queue.Msg, user ldap.User) error {
+func waitAnswer(ctx context.Context, msg queueMsg, user ldapUser) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -124,12 +119,12 @@ func getUserName(user string) string {
 	return user
 }
 
-func getUser(sAMAccountName string) (ldap.User, error) {
-	u := ldap.User{}
+func getUser(sAMAccountName string) (ldapUser, error) {
+	u := ldapUser{}
 	u.SAMAccountName = sAMAccountName
 	err := u.PullViaSAMAccountName()
 	if err != nil {
-		return ldap.User{}, err
+		return ldapUser{}, err
 	}
 	return u, nil
 }

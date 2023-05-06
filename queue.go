@@ -1,46 +1,46 @@
-package queue
+package vfacore
 
 import "sync"
 
-var Q Queue
+var qu queue
 
-type Queue struct {
+type queue struct {
 	rw  sync.RWMutex
-	Map map[int64]Msg
+	Map map[int64]queueMsg
 }
-type Msg struct {
+type queueMsg struct {
 	Chan  chan int
 	MsgId int64
 }
 
-func (q *Queue) AddKey(key int64) {
+func (q *queue) AddKey(key int64) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
-	msg := Msg{}
+	msg := queueMsg{}
 	msg.Chan = make(chan int)
 	q.Map[key] = msg
 }
 
-func (q *Queue) IssetKey(key int64) bool {
+func (q *queue) IssetKey(key int64) bool {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 	_, ok := q.Map[key]
 	return ok
 }
 
-func (q *Queue) RemoveKey(key int64) {
+func (q *queue) RemoveKey(key int64) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 	delete(q.Map, key)
 	return
 }
-func (q *Queue) GetMsg(key int64) Msg {
+func (q *queue) GetMsg(key int64) queueMsg {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 	return q.Map[key]
 }
 
-func (q *Queue) SetMsgId(key, msgid int64) {
+func (q *queue) SetMsgId(key, msgid int64) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 	_, ok := q.Map[key]
@@ -55,8 +55,8 @@ func (q *Queue) SetMsgId(key, msgid int64) {
 
 // инициализация очередей
 func InitQ() {
-	var q Queue
-	q.Map = make(map[int64]Msg)
-	Q = q
+	var q queue
+	q.Map = make(map[int64]queueMsg)
+	qu = q
 
 }
