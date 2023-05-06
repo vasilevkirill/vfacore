@@ -30,16 +30,6 @@ func generateCertificate() error {
 		}
 	}
 
-	_, err := os.Stat(certFileCer)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if err != nil && os.IsNotExist(err) {
-		err := os.Remove(certFileKey)
-		if err != nil {
-			return err
-		}
-	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return err
