@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//генерируем закрытый ключи и сертфикат, для доменного имени и слхраняем на диск
 func generateCertificate() error {
 	certFileKey := "./cert.key"
 	certFileCer := "./cert.cer"

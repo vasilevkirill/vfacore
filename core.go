@@ -6,7 +6,7 @@ func Run() error {
 		return err
 	}
 
-	InitQ()
+	initQ()
 
 	err = ldapRun() // инициалзируем ldap
 	if err != nil {
