@@ -34,7 +34,8 @@ func telegramRun() error {
 	}
 
 	if info.LastErrorDate != 0 {
-		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+		errN := errorGetFromIdAddSuffix(606, fmt.Sprintf("callback failed: %s", info.LastErrorMessage))
+		return errN
 	}
 	bot = bt
 	go updatesWord()

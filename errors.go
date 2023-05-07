@@ -24,6 +24,7 @@ var (
 		603: "telegram bad GetWebhookInfo:",
 		604: "telegram bad removeMsg:",
 		605: "telegram bad start web server:",
+		606: "telegram bad get info:",
 		700: "Radius bad start server:",
 		701: "Radius waitAnswer:",
 		702: "Radius getUser:",
