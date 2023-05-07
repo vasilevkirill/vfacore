@@ -1,13 +1,15 @@
 package vfacore
 
-func Run() error {
+func Run(shb bool) error {
 	err := loadConfig() // поулчаем конфиг
 	if err != nil {
 		return err
 	}
 
 	initQ()
-
+	if shb {
+		go showBanner()
+	}
 	err = ldapRun() // инициалзируем ldap
 	if err != nil {
 		return err
@@ -22,5 +24,6 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

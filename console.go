@@ -32,6 +32,6 @@ Radius server running: %s
 	return nBanner
 }
 
-func ShowBanner() {
+func showBanner() {
 	fmt.Print(getBanner())
 }
